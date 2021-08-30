@@ -1,5 +1,6 @@
 from datetime import datetime
 from tqdm import tqdm
+from Stream import Stream
 
 import re
 import requests
@@ -23,7 +24,7 @@ class VideoFacebook:
             else:
                 self.IsAFacebookVideoLink=False;    
     
-    def _Load(self):
+    def Load(self):
         if self.Html is None:
             self.Html=requests.get(self.Url).content.decode('utf-8');
             _qualityhd = re.search('hd_src:"https', self.Html);
@@ -45,7 +46,7 @@ class VideoFacebook:
             raise Exception("No es un link valido!");
 
         if self.HasSD is None:
-            self._Load();
+            self.Load();
         if not self.HasSD:
             result=None;
         else:
@@ -57,7 +58,7 @@ class VideoFacebook:
             raise Exception("No es un link valido!");
 
         if self.HasHD is None:
-            self._Load();
+            self.Load();
         if not self.HasHD:
             result=None;
         else:
@@ -69,7 +70,7 @@ class VideoFacebook:
     
     @staticmethod
     def Download(url):
-        return requests.get(url, stream=True);
+        return Stream(requests.get(url, stream=True));
         
     
     @staticmethod
@@ -84,15 +85,16 @@ class VideoFacebook:
                 videoUrl=video.GetSDLink();
             if videoUrl is not None:
                 videoStream=VideoFacebook.Download(videoUrl);
-                fileSize = int(videoStream.headers['Content-Length']);
                 if fileName is None:
                     fileName = datetime.strftime(datetime.now(), '%Y-%m-%d-%H-%M-%S');
-                t = tqdm(total=fileSize, unit='B', unit_scale=True, desc=fileName, ascii=True);
+                t = tqdm(total=videoStream.Total, unit='B', unit_scale=True, desc=fileName, ascii=True);
                 fileName=fileName + '.mp4';
                 with open(fileName , 'wb') as f:
                     for data in videoStream.iter_content(blockSize):
                         t.update(len(data));
                         f.write(data);
+
+                videoStream.Close();
                 t.close();
                 result=fileName;
         return result;

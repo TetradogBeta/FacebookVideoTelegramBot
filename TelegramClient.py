@@ -4,6 +4,8 @@ import os
 
 
 class TelegramClient:
+    ComandosDownload=["/DownloadSD","/DownloadHD"];
+    ComandoStart="/start";
     def __init__(self,bot,msg):
         #puede ser para buscar o para obtener el link(ya sea un link como text o contestan a un mensaje enviado)
         content_type, chat_type, chat_id = telepot.glance(msg);
@@ -11,6 +13,8 @@ class TelegramClient:
         self.Bot=bot;
         self.Message=msg;
         self.Id=msg["chat"]["id"];
+        self.DownloadHD=None;
+        self.IsStartCommand="text" in msg and TelegramClient.ComandoStart in msg["text"];
         #mirar si reenvian un video para obtener su link de descarga
         if  "text" in msg and "http" not in msg["text"] and "reply_to_message" not in msg:
             self.IsAnUrl=False;
@@ -25,6 +29,14 @@ class TelegramClient:
                 self._setUrl(msg["text"]);
                     
     def _setUrl(self,message):
+        msg=message.lower();
+        pos=0;
+        total=len(TelegramClient.ComandosDownload);
+        while self.DownloadHD is None and pos<total:
+            if TelegramClient.ComandosDownload[pos].lower() in msg:
+                self.DownloadHD=pos==1;
+                message=message.replace(TelegramClient.ComandosDownload[pos],"").replace(" ","");
+            pos+=1;
         if "http" in message:
             if "\n" in message:
                 camposUrl=message.split("\n");
@@ -40,12 +52,9 @@ class TelegramClient:
     def SendText(self,text):
         self.Bot.sendMessage(self.ChatId,text);
     
-    def SendVideo(self,pathVideo,desc=""):
-        stream=open(pathVideo,"rb");
-        self.Bot.sendVideo(self.ChatId,stream,caption=desc);
-        stream.close();
+    def SendVideo(self,videoUrl,desc=""):
+        self.Bot.sendVideo(self.ChatId,videoUrl,caption=desc);
 
-    def SendAnimation(self,pathAnimation,desc=""):
-        self.SendVideo(pathAnimation,desc);
+
  
     

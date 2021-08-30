@@ -16,5 +16,5 @@ elif len(sys.argv)>1:
     fConfig.writelines([token]);
     fConfig.close();
 
-print("Iniciando FacebookVideo Bot V1.0");
+print("Iniciando FacebookVideo Bot V2.0");
 VideoBot(token).Start().run_forever();

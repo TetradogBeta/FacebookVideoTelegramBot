@@ -14,24 +14,41 @@ class VideoBot:
         return self.Bot.Start(metodo);
     
     def _DoIt(self,telegramClient):
-        if telegramClient.IsAnUrl:
+        if telegramClient.IsStartCommand:
+            telegramClient.SendText("/DownloadSD o /DownloadHD espacio y URL");
+        elif telegramClient.IsAnUrl:
             video=VideoFacebook(telegramClient.Url);
-            if video.IsAFacebookVideoLink:
-                urlSD=video.GetSDLink();
-                urlHD=video.GetHDLink();
-                mensaje=None;
-                if urlSD is not None:
-                    mensaje="SD:"+urlSD;
-                if urlHD is not None:
-                    if mensaje is None:
-                        mensaje="HD:"+urlHD;
+            video.Load();
+            if telegramClient.DownloadHD is None:
+                if video.IsAFacebookVideoLink:
+                    urlSD=video.GetSDLink();
+                    urlHD=video.GetHDLink();
+                    mensaje=None;
+                    if urlSD is not None:
+                        mensaje="SD:"+urlSD;
+                    if urlHD is not None:
+                        if mensaje is None:
+                            mensaje="HD:"+urlHD;
+                        else:
+                            mensaje+="\nHD:"+urlHD;
+                    if mensaje is not None:
+                        telegramClient.SendText(mensaje);
                     else:
-                        mensaje+="\nHD:"+urlHD;
-                if mensaje is not None:
-                    telegramClient.SendText(mensaje);
+                        telegramClient.SendText("No hay videos ni HD ni SD...");    
                 else:
-                    telegramClient.SendText("No hay videos ni HD ni SD...");    
+                    telegramClient.SendText("Link incorrecto, solo videos de Facebook!");
+            elif telegramClient.DownloadHD:
+                if video.HasHD:
+                    telegramClient.SendVideo(video.GetHDLink(),"HD");
+                else:
+                    telegramClient.SendText("No está en HD");
             else:
-                telegramClient.SendText("Link incorrecto, solo videos de Facebook!");
+                if video.HasSD:
+                    telegramClient.SendVideo(video.GetSDLink(),"SD");
+                else:
+                    telegramClient.SendText("No está en SD");     
+
+
+
         else:
                 telegramClient.SendText("Solo links a videos de Facebook!");
