@@ -24,7 +24,7 @@ class VideoBot:
                     mensaje="SD:"+urlSD;
                 if urlHD is not None:
                     if mensaje is None:
-                        mensaje=urlHD;
+                        mensaje="HD:"+urlHD;
                     else:
                         mensaje+="\nHD:"+urlHD;
                 if mensaje is not None:
@@ -33,3 +33,5 @@ class VideoBot:
                     telegramClient.SendText("No hay videos ni HD ni SD...");    
             else:
                 telegramClient.SendText("Link incorrecto, solo videos de Facebook!");
+        else:
+                telegramClient.SendText("Solo links a videos de Facebook!");
