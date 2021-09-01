@@ -7,23 +7,17 @@ import requests
 
 #source:https://github.com/sameera-madushan/Facebook-Video-Downloader/blob/master/downloader.py
 
-class VideoFacebook:
-    RaiseException=False;
+class Video:
+
     def __init__(self,urlVideo):
-        x = re.match(r'^(https:|)[/][/]www.([^/]+[.])*facebook.com', urlVideo);
-        if x:
-            self.Url=urlVideo;
-            self.Html=None;
-            self.Qualities=None;
-            self.IsAFacebookVideoLink=True;
-            self.HasHD=None;
-            self.HasSD=None;
-        else:
-            if VideoFacebook.RaiseException:
-                raise Exception("El link no es de Facebook");
-            else:
-                self.IsAFacebookVideoLink=False;    
-    
+        self.Url=urlVideo;
+
+        self.Html=None;
+        self.Qualities=None;
+        self.HasHD=None;
+        self.HasSD=None;
+
+
     def Load(self):
         if self.Html is None:
             self.Html=requests.get(self.Url).content.decode('utf-8');
@@ -40,33 +34,39 @@ class VideoFacebook:
                         self.HasHD=True;
                     else:
                         self.HasSD=True;
+    def GetMessage(self):
+        message="";
+        self.Load();
+        link=self.GetSDLink();
+        if link is not None:
+            message="SD: "+link+"\n";
+        link=self.GetHDLink();
+        if link is not None:
+            message+="HD: "+link;
+        return message;
                         
     def GetSDLink(self):
-        if not self.IsAFacebookVideoLink:
-            raise Exception("No es un link valido!");
-
+        result=None;
         if self.HasSD is None:
             self.Load();
-        if not self.HasSD:
-            result=None;
-        else:
+        if self.HasSD:
             result=self._GetUrl("SD");
         return result;
 
     def GetHDLink(self):
-        if not self.IsAFacebookVideoLink:
-            raise Exception("No es un link valido!");
-
+        result=None;
         if self.HasHD is None:
             self.Load();
-        if not self.HasHD:
-            result=None;
-        else:
+        if self.HasHD:
             result=self._GetUrl("HD");
         return result;
     
     def _GetUrl(self,quality):
-        return re.search(rf'{quality.lower()}_src:"(.+?)"', self.Html).group(1);
+        try:
+            result= re.search(rf'{quality.lower()}_src:"(.+?)"', self.Html).group(1);
+        except:
+            result=None;
+        return result;
     
     @staticmethod
     def Download(url):
@@ -75,30 +75,28 @@ class VideoFacebook:
     
     @staticmethod
     def DownloadVideo(url,qualityDefault="HD",fileName=None,blockSize=1024):
-        video=VideoFacebook(url);
+        video=Video(url);
         result=None;
-        if video.IsAFacebookVideoLink:
-            video._Load();
-            if qualityDefault == "HD" and video.HasHD:
-                videoUrl=video.GetHDLink();
-            else:
-                videoUrl=video.GetSDLink();
-            if videoUrl is not None:
-                videoStream=VideoFacebook.Download(videoUrl);
-                if fileName is None:
-                    fileName = datetime.strftime(datetime.now(), '%Y-%m-%d-%H-%M-%S');
-                t = tqdm(total=videoStream.Total, unit='B', unit_scale=True, desc=fileName, ascii=True);
-                fileName=fileName + '.mp4';
-                with open(fileName , 'wb') as f:
-                    for data in videoStream.iter_content(blockSize):
-                        t.update(len(data));
-                        f.write(data);
+        video.Load();
+        if qualityDefault == "HD" and video.HasHD:
+            videoUrl=video.GetHDLink();
+        else:
+            videoUrl=video.GetSDLink();
+        if videoUrl is not None:
+            videoStream=Video.Download(videoUrl);
+            if fileName is None:
+                fileName = datetime.strftime(datetime.now(), '%Y-%m-%d-%H-%M-%S');
+            t = tqdm(total=videoStream.Total, unit='B', unit_scale=True, desc=fileName, ascii=True);
+            fileName=fileName + '.mp4';
+            with open(fileName , 'wb') as f:
+                for data in videoStream.iter_content(blockSize):
+                    t.update(len(data));
+                    f.write(data);
 
-                videoStream.Close();
-                t.close();
-                result=fileName;
+            videoStream.Close();
+            t.close();
+            result=fileName;
         return result;
-
 
 
 
